@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Standard Operating Procedure</title>
+  <link rel="stylesheet" href="../styles.css" />
+    <script src="../script.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#">
+        <span class="brand-mark">&lt;/&gt;</span>
+        <span>SOP Portal</span>
+      </a>
+
+      <button
+        class="menu-toggle"
+        aria-label="Open navigation menu"
+        aria-expanded="false"
+        aria-controls="nav-links"
+      >
+        ☰
+      </button>
+
+      <nav class="nav-links" id="nav-links">
+        <a href="#purpose">Purpose</a>
+        <a href="#scope">Scope</a>
+        <a href="#procedure">Procedure</a>
+        <a href="#roles">Roles</a>
+        <a href="#records">Records</a>
+        <a href="#contact" class="nav-cta">Request Support</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container two-column">
+        <div>
+          <p class="eyebrow">Standard Operating Procedure</p>
+          <h1>
+            Onsite LiDAR Scanning
+            <span>Standard Operating Procedure</span>
+          </h1>
+          <p class="hero-text">
+            This page outlines a sample SOP document based on my previous work experience
+            at BeyondView.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href="#procedure">View Procedure</a>
+            <!-- <a class="button button-secondary" href="#records">See Records</a> -->
+          </div>
+
+          <!-- <div class="social-links">
+            <a href="#overview">Overview</a>
+            <a href="#roles">Roles</a>
+            <a href="#contact">Contact</a>
+          </div> -->
+        </div>
+
+        <!-- <div class="hero-card" aria-label="Procedure summary">
+          <div class="terminal-top">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="terminal-body">
+            <p><span class="code-purple">Document ID</span> : SOP-001</p>
+            <p><span class="code-purple">Version</span> : 1.0</p>
+            <p><span class="code-purple">Effective Date</span> : 2026-09-18</p>
+            <p><span class="code-purple">Owner</span> : Operations Team</p>
+            <p><span class="code-purple">Status</span> : Active</p>
+            <p class="indent"><span class="code-green">1.</span> Review request</p>
+            <p class="indent"><span class="code-green">2.</span> Approve change</p>
+            <p class="indent"><span class="code-green">3.</span> Execute task</p>
+            <p class="indent"><span class="code-green">4.</span> Record completion</p>
+          </div>
+        </div> -->
+      </div>
+    </section>
+
+    <section class="section section-muted" id="purpose">
+      <div class="container two-column">
+        <div>
+          <!-- <p class="eyebrow">Purpose</p> -->
+          <h2>Purpose</h2>
+        </div>
+        <div class="section-content">
+          <p>
+            The standard operating procedure (SOP) describes the operation of LiDAR equipment during onsite scanning projects, 
+            using the 3DMakerPro Eagle Scanner as the primary scanning device.
+          </p>
+          <!-- <div class="skills">
+            <span>Consistency</span>
+            <span>Compliance</span>
+            <span>Traceability</span>
+            <span>Quality Control</span>
+          </div> -->
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="scope">
+      <div class="container two-column">
+        <div>
+          <!-- <p class="eyebrow">Scope</p> -->
+          <h2>Scope</h2>
+        </div>
+        <div class="section-content">
+          This SOP provides guidelines for equipment preparation and 
+          usage for collecting 3D spatial data, as well as managing the 
+          data during the onsite visit. The SOP also describes the 
+          personnel and details required for a successful onsite project.
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="roles">
+      <div class="container two-column">
+        <div>
+          <!-- <p class="eyebrow">Roles</p> -->
+          <h2>Roles and Responsibilities</h2>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <h3 class="timeline-date">Field Engineer</h3>
+            <h3>Primary executor of the scanning project</h3>
+            <p>The Field Engineer is responsible for transporting the equipment to 
+                and from the project location, maintaining the equipment, and running 
+                the equipment while onsite. They are also responsible 
+                for securing and backing up the data collected each day. Unless a 
+                different team member is designated, the Field Engineer is the main 
+                in-person contact with the client.</p>
+          </div>
+          <div class="timeline-item">
+            <p class="timeline-date">Suppor Engineer</p>
+            <h3>Assitance for the Field Engineer</h3>
+            <p>This is an optional role if either the time frame of the project and/or 
+                total square footage warrants support for the Field Engineer. 
+                The Support Engineer must be capable of all of the Field Engineer’s 
+                responsibilities, which include the operation and maintenance of the 
+                scanning equipment, data management, and client interactions. In the 
+                event that a Field Engineer is unable to perform their tasks, the 
+                Support Engineer is required to acquire the equipment from the Field 
+                Engineer and continue the scanning as long as the Field Engineer is 
+                absent. Otherwise, the Support Engineer will assist the Field Engineer 
+                with client interactions, onsite planning, and equipment management.</p>
+          </div>
+          <div class="timeline-item">
+            <p class="timeline-date">Project/Product Manager</p>
+            <h3>Client relations-focused role</h3>
+            <p>This is an optional role meant for relationship building with the client, and 
+                to provide additional support for the engineering personnel. The Product
+                Manager is not required to operate or maintain the equipment, and is not 
+                required to be involved in any of the scanning procedures. However, 
+                the Field and/or Support Engineer may ask the Product Manager for 
+                assistance during the scanning process, such as clearing obstructions 
+                during walk-through, or documenting additional onsite information. </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="section section-muted" id="prerequisites">
+      <div class="container two-column">
+        <div>
+          <!-- <p class="eyebrow">Purpose</p> -->
+          <h2>Prerequisites</h2>
+        </div>
+        <div class="section-content">
+          <p>
+            A scope of work document from the team and written agreement is required before an onsite visit. The scope of work will define the project parameters and pricing, which will then inform the onsite planning process. A written agreement is needed as proof of the client’s consent and acknowledgment of the onsite scanning project.
+            <br><br>
+            Afterward, a kick-off meeting is required for all team and client personnel to review the scope of work, and to discuss logistics of the project. The client must provide contact information of the onsite personnel who are responsible for building access and security. The team will also provide the contact information of the personnel who will be present during the scanning. Both the client and the team should clarify the daily arrival time and departure time, exact dates of the project, building access, and accessibility of the space scoped for scanning.
+            <br><br>
+            Any floor plans and building documents should be delivered by the client to the team prior to travel. The method of scan data storage should also be determined, including the format/file type of the data. If the client allows cloud storage of the data, the data service should be selected and a dedicated repository should be created. All stakeholders relevant to the data (Field Engineer, client personnel) should have access to the cloud storage service. Otherwise, the team must inform the client of the physical data storage plan. 
+            <br><br>
+            Travel to and from the project site will be discussed internally by the team, determining the onsite personnel, methods of travel, and dates of arrival and departure to the client locale.
+          </p>
+
+        </div>
+      </div>
+    </section>
+
+
+    <section class="section" id="equipment">
+      <div class="container two-column">
+        <div>
+          <!-- <p class="eyebrow">Roles</p> -->
+          <h2>Equipment</h2>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <h3 class="timeline-date">3DMakerPro Eagle Scanner</h3>
+          </div>
+          <div class="timeline-item">
+            <h3 class="timeline-date">LiDAR Protective Cap</h3>
+          </div>
+          <div class="timeline-item">
+            <h3 class="timeline-date">3DMakerPro Eagle Scanner Case</h3>
+          </div>
+        <div class="timeline-item"><h3 class="timeline-date">3DMakerPro Eagle Scanner Case</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Detachable Scanner Handle</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">SD Card Adapter</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">SD Card for Internal Storage (>=128GB)*</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">External USB Drives (>=64GB)*</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">AC/DC Wall Adapter</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Dual-Ended Type C USB Cable</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Type C to Type A USB Adapter</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Lintless Tissues or Microfiber Cloth</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Safety Vest and/or Company-branded attire</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Portable Charger (>=25000mAh)</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Onsite Access ID**</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Label Maker or Tape to Label External Drives</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Measuring Tape or Laser Distance Measure</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Laptop (with Windows and RTX GPU)</h3></div>
+        <div class="timeline-item"><h3 class="timeline-date">Laptop Power Adapter</h3></div>
+        </div>
+      </div>
+    </section>
+
+
+
+    <section class="section section-muted" id="procedure">
+      <div class="container">
+        <div class="section-heading">
+          <div>
+            
+            <h2>Procedure</h2>
+          </div>
+          <!-- <a class="text-link" href="#contact">Need help?</a> -->
+        </div>
+
+        <div class="project-grid">
+            <h3 class="eyebrow">Before Travel</h3>
+          <article class="project-card">
+            <!-- <div class="project-icon">01</div> -->
+            <ol>
+                <li>Print the building floor plans for physical annotation. Alternatively if the documents are digital, prepare a separate mobile device to annotate the floor plans during scanning</li>
+                <li>Determine an initial walkthrough path for each floor and each building. This will also help familiarize the Field Engineer with the layout of each location.</li>
+                <li>Create a Scanning Schedule with estimates for scanning times on each floor in each building scoped for the project. Send this schedule to the client.</li>
+                <li>Create an Equipment Manifest to track what equipment is being transported and, if multiple team members are onsite, which team member has which piece of equipment. Also use this document to track which scans are stored on which devices, especially if cloud storage is not an option.</li>
+                <li>Determine the data storage plan. </li>
+                <li>If cloud storage is allowed, the cloud repository must be set up. Test access to the repository and upload sample data.</li>
+                <li>Otherwise, provide the client with a list of physical storage devices that will be used for the project. Then determine how and when the devices will be delivered to the client.</li>
+            </ol>
+            <!-- <a class="text-link" href="#roles">View responsibility</a> -->
+          </article>
+
+            <h3 class="eyebrow">Each Day Prior to Onsite Arrival</h3>
+          <article class="project-card">
+            <!-- <div class="project-icon">01</div> -->
+            <ol>
+                <li>Charge the scanner to 100% battery capacity.</li>
+                <li>Review the Scanning Schedule and floor plans to determine what can and should be scanned for that day.</li>
+                <li>The scanner uses an onboard SD card as Ensure there is enough internal storage space for the day’s anticipated scanning.</li>
+                <li>Use lintless tissues or a microfiber cloth to remove dust and other particulates from the LiDAR head.</li>
+                <li>Turn on the scanner and perform a quick test scan to ensure that the equipment is functioning.</li>
+                <li>Pack all equipment into the scanner case and travel to the scanning site.</li>
+            </ol>
+            <!-- <a class="text-link" href="#roles">View responsibility</a> -->
+          </article>
+
+           <h3 class="eyebrow">Onsite</h3>
+          <article class="project-card">
+            <ol>
+                <li>Follow the Scanning Schedule to decide which building and floor to scan first.</li>
+                <li>Inform the onsite point person of arrival at the first building.</li>
+                <li>Choose a base room as a dedicated base of operations, with permission from the client point person. This is where the team will leave any belongings and items that are not needed during the scanning process.</li>
+                <li>Walk around the floor according to the walkthrough path determined earlier. </li>
+                <li>Remove any obstructions in the walking path, and inform any personnel in the walking path that a scan will begin soon.</li>
+                <li>Take a random sample of measurements around the floor for future reference. This should include the dimensions of at least one room and one hallway in the floor. Additional measurements can be taken of other features such as doorways. </li>
+                <li>Cover any large reflective surfaces with a tarp or similar if possible. </li>
+                <li>Unpack, assemble, and turn on the scanner. Remove the LiDAR cap and do a quick test scan of the base room to ensure that the scanner is functioning.</li>
+                <li>Following the walkthrough path of the day’s first floor plan, begin scanning the floor.</li>
+                <li>Stop the scan after 10 minutes to break up the scan into smaller chunks. This will ensure each scan chunk is more manageable and will mitigate any file corruption issues related to large file sizes. </li>
+                <li>Double check the scan with the onboard screen to verify that the scanner generally replicated the shape of the floor.</li>
+                <li>Stop scanning immediately if the scanner shows severe misalignment and loses tracking. Return to the start point of that scan and restart a completely new scan along the walkthrough path.</li>
+                <li>Stop scanning every 3-4 hours to allow the scanner to charge and rest.</li>
+                <li>Update the Scanning Schedule with any notes, and to check scanning progress. </li>
+                <li>Repeat scanning until the entire floor is complete, then continue to the next floor/building until the end of the day.</li>
+                <li>The previous steps can be repeated for exterior scans if included in the project scope. </li>
+            </ol>
+            <!-- <a class="text-link" href="#roles">View responsibility</a> -->
+          </article>
+
+        <h3 class="eyebrow">At the End of Each Day</h3>
+          <article class="project-card">
+            <ol>
+                <li>Compare actual scanning times with the Scanning Schedule to adjust estimates and determine if additional time is needed. Communicate any significant changes to the client and other team members, and schedule additional time.</li>
+                <li>Backup the data to a separate external storage devices. Label the drives with tape or label maker and track the devices on the Equipment Manifest.</li>
+                <li>Upload one or more scans to the laptop and open the scan file in an application such as Meshroom. Check to see if the general shape and main features of the floor are visible in the scan. This step is also necessary to ensure that the scan file itself is not corrupted and can be used in downstream tasks.</li>
+                <li>Update the Scanning Schedule if any scan needs do be redone.</li>
+                <li>Charge the scanner to 100% battery capacity.</li>
+            </ol>
+            <!-- <a class="text-link" href="#roles">View responsibility</a> -->
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="expectedoutcomes">
+      <div class="container two-column">
+        <div>
+          <!-- <p class="eyebrow">Scope</p> -->
+          <h2>Expected Outcomes</h2>
+        </div>
+        <div class="section-content">
+          The immediate deliverables from this procedure are a complete set of point cloud 
+          data files for the interior floors of each building scoped in the project. 
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="troubleshooting">
+      <div class="container two-column">
+        <div>
+          <!-- <p class="eyebrow">Scope</p> -->
+          <h2>Troubleshooting</h2>
+        </div>
+        <div class="section-content">
+            <ul>
+                <li>Ensure the LiDAR cap is removed prior to scanning. Otherwise the scan will collect noise.</li>
+                <li>Move slowly in smaller spaces and avoid turning around sharply, especially if there are a lot of objects in view. The scanner has a higher tendency to lose tracking in such situations. It may be easier to walk straight into a tight space, then walk backwards without turning around.</li>
+                <li>Re-scan a segment of a floor if there seems to be misalignment. </li>
+                <li>Plan scans so that there is an overlapping feature from one scan to the next. For larger floors, it makes sense to stop a scan in one room, then re-scan that room at the beginning of the next scan.</li>
+                <li>Ensure the project budget allows for the purchase of additional external storage devices. Storage capacity tends to be the limiting factor for onsite resources. </li>
+            </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- <section class="section section-muted" id="records">
+      <div class="container">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Records</p>
+            <h2>Documentation and retention</h2>
+          </div>
+          <a class="text-link" href="#contact">Request a copy</a>
+        </div>
+
+        <div class="writing-list">
+          <div class="writing-item">
+            <div>
+              <p class="writing-type">Form</p>
+              <h3>Request and approval log</h3>
+            </div>
+            <span>→</span>
+          </div>
+
+          <div class="writing-item">
+            <div>
+              <p class="writing-type">Record</p>
+              <h3>Completion checklist</h3>
+            </div>
+            <span>→</span>
+          </div>
+
+          <div class="writing-item">
+            <div>
+              <p class="writing-type">Archive</p>
+              <h3>Final signed document</h3>
+            </div>
+            <span>→</span>
+          </div>
+        </div>
+      </div>
+    </section> -->
+
+    <!-- <section class="contact-section" id="contact">
+      <div class="container contact-content">
+        <p class="eyebrow">Contact</p>
+        <h2>Questions about this SOP?</h2>
+        <p>
+          Contact the process owner for clarification, updates, or approval requests.
+        </p>
+        <a class="button button-primary" href="mailto:ops@example.com">Email Operations</a>
+      </div>
+    </section> -->
+  </main>
+<hr>
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <p>&copy; <span id="year"></span> Jesson Go</p>
+      <a href="#purpose">Back to top</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

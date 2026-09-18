@@ -316,7 +316,7 @@ h2 {
 .project-card {
   display: flex;
   flex-direction: column;
-  min-height: 350px;
+  min-height: 100px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
