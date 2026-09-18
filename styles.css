@@ -270,6 +270,7 @@ h2 {
 .section-content {
   color: var(--muted);
   font-size: 1.05rem;
+  padding: 20px;
 }
 
 .section-content p + p {
@@ -465,6 +466,7 @@ h2 {
 @media (max-width: 800px) {
   .container {
     width: min(100% - 2rem, var(--max-width));
+    padding: 30px;
   }
 
   .menu-toggle {
