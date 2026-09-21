@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Imageteam API Documentation | Jesson Go</title>
+  <meta
+    name="description"
+    content="API documentation for the Imageteam Flask application, Slack workflows, Dropbox storage, and ImaginePro image generation."
+  />
+  <link rel="stylesheet" href="../styles.css" />
+  <script src="../script.js" defer></script>
+  <style>
+    .docs-hero {
+      min-height: auto;
+      padding-block: 6rem 4rem;
+    }
+
+    .docs-hero h1 {
+      max-width: 850px;
+    }
+
+    .docs-layout {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .docs-sidebar {
+      position: sticky;
+      top: 100px;
+    }
+
+    .docs-sidebar nav {
+      border-left: 1px solid var(--border);
+      padding-left: 1.25rem;
+    }
+
+    .docs-sidebar a {
+      display: block;
+      color: var(--muted);
+      font-size: 0.88rem;
+      padding: 0.38rem 0;
+    }
+
+    .docs-sidebar a:hover {
+      color: var(--accent);
+    }
+
+    .docs-content {
+      min-width: 0;
+      color: var(--muted);
+    }
+
+    .docs-content section {
+      scroll-margin-top: 100px;
+      border-top: 1px solid var(--border);
+      padding-block: 3.5rem;
+    }
+
+    .docs-content section:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .docs-content h2 {
+      color: var(--text);
+      font-size: clamp(1.8rem, 3vw, 2.7rem);
+    }
+
+    .docs-content h3 {
+      margin-top: 2.25rem;
+      color: var(--text);
+      font-size: 1.35rem;
+    }
+
+    .docs-content h4 {
+      margin-top: 1.5rem;
+      color: var(--accent);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.98rem;
+      font-weight: 600;
+    }
+
+    .docs-content p,
+    .docs-content ul,
+    .docs-content ol {
+      max-width: 820px;
+      margin-top: 1rem;
+    }
+
+    .docs-content li {
+      margin: 0.55rem 0 0 1.25rem;
+    }
+
+    .docs-content strong {
+      color: var(--text);
+    }
+
+    .docs-content code,
+    .docs-sidebar code {
+      border-radius: 4px;
+      background: rgba(103, 232, 249, 0.09);
+      color: var(--accent);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.88em;
+      padding: 0.12rem 0.3rem;
+    }
+
+    .docs-content pre {
+      overflow-x: auto;
+      margin-top: 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #080d18;
+      padding: 1.2rem 1.35rem;
+      color: #d9e7ff;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.86rem;
+      line-height: 1.7;
+    }
+
+    .docs-content pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    .docs-table-wrap {
+      overflow-x: auto;
+      margin-top: 1.25rem;
+    }
+
+    .docs-content table {
+      width: 100%;
+      min-width: 620px;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    .docs-content th,
+    .docs-content td {
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 0.75rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .docs-content th {
+      color: var(--text);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .docs-callout {
+      margin-top: 1.5rem;
+      border-left: 3px solid var(--accent);
+      background: rgba(103, 232, 249, 0.06);
+      padding: 1rem 1.25rem;
+    }
+
+    .docs-callout p {
+      margin-top: 0;
+    }
+
+    .docs-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 2rem;
+    }
+
+    .docs-meta span {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding: 0.35rem 0.7rem;
+    }
+
+    .docs-flow {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 1.5rem;
+    }
+
+    @media (max-width: 800px) {
+      .docs-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+
+      .docs-sidebar {
+        position: static;
+      }
+
+      .docs-sidebar nav {
+        columns: 2;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .docs-sidebar nav {
+        columns: 1;
+      }
+
+      .docs-content pre {
+        font-size: 0.76rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav container" aria-label="Primary navigation">
+      <a class="brand" href="../index.html#top" aria-label="Homepage">
+        <span class="brand-mark">&lt;/&gt;</span>
+        <span>Jesson Go</span>
+      </a>
+
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="nav-links"
+        aria-label="Open navigation menu"
+      >
+        ☰
+      </button>
+
+      <div class="nav-links" id="nav-links">
+        <a href="../index.html#about">About</a>
+        <a href="../index.html#projects">Projects</a>
+        <a href="../index.html#writing">Writing</a>
+        <a href="../index.html#experience">Experience</a>
+        <a class="nav-cta" href="../index.html#contact">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero container docs-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Technical documentation · API reference</p>
+        <h1>Imageteam <span>Flask API</span></h1>
+        <p class="hero-text">
+          Reference for the Slack webhook, Dropbox respository,
+          ImaginePro image generation calls, and overall tool workflow.
+        </p>
+        <div class="docs-meta" aria-label="Documentation topics">
+          <span>Flask</span>
+          <span>Slack Events API</span>
+          <span>Dropbox</span>
+          <span>ImaginePro</span>
+          <span>Python</span>
+        </div>
+      </div>
+
+      <!-- <aside class="hero-card" aria-label="API summary">
+        <div class="terminal-top">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="terminal-body">
+          <p><span class="code-purple">POST</span> <span class="code-green">/slack/webhook</span></p>
+          <p class="indent">status: <span class="code-green">200 OK</span></p>
+          <p class="indent">auth: <span class="code-orange">Ellie only</span></p>
+          <p class="indent">jobs: <span class="code-orange">background threads</span></p>
+          <p>provider: <span class="code-green">ImaginePro</span></p>
+        </div>
+      </aside> -->
+    </section>
+
+    <section class="section section-muted">
+      <div class="container docs-layout">
+        <aside class="docs-sidebar" aria-label="Documentation navigation">
+          <p class="eyebrow">On this page</p>
+          <nav>
+            <a href="#overview">Overview</a>
+            <a href="#http-api">HTTP API</a>
+            <a href="#commands">Slack commands</a>
+            <a href="#configuration">Configuration</a>
+            <a href="#services">Service APIs</a>
+            <a href="#workflows">Workflow APIs</a>
+            <a href="#prompt-builder">Prompt builder</a>
+            <a href="#catalog">Catalog contract</a>
+            <a href="#flow">End-to-end flow</a>
+            <a href="#operations">Operations</a>
+            <a href="#execution">Local execution</a>
+          </nav>
+        </aside>
+
+        <div class="docs-content">
+          <section id="overview">
+            <p class="eyebrow">01 · Orientation</p>
+            <h2>Overview</h2>
+            <p>
+              This document describes the Flask application in <code>app.py</code>
+              and the local services and workflows called by it. It is based on
+              the current source code, so it documents the behavior that exists
+              today rather than an idealized or future API.
+            </p>
+            <p>
+              The application is a Slack-controlled image-generation service. A
+              Slack event is received by Flask, authorized by checking the Slack
+              user's name, and dispatched to a background thread. The workflows
+              use Dropbox for catalog and image storage and use ImaginePro for
+              image generation.
+            </p>
+
+            <h3>Runtime architecture</h3>
+            <p><code>app.py</code> initializes these objects at import time:</p>
+            <div class="docs-table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Object</th><th>Class</th><th>Responsibility</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>slack_svc</code></td><td><code>SlackService</code></td><td>Slack user lookup, messages, and thread reads</td></tr>
+                  <tr><td><code>dropbox_svc</code></td><td><code>DropboxService</code></td><td>Dropbox downloads, uploads, folders, links, and moves</td></tr>
+                  <tr><td><code>imgpro_svc</code></td><td><code>ImgProService</code></td><td>ImaginePro image generation and polling</td></tr>
+                  <tr><td><code>catalog_wf</code></td><td><code>CatalogWorkflow</code></td><td>Reads the catalog and generates images through ImaginePro</td></tr>
+                  <tr><td><code>generation_wf</code></td><td><code>GenerationWorkflow</code></td><td>Alternate image-generation workflow that uploads generated images</td></tr>
+                  <tr><td><code>review_wf</code></td><td><code>ReviewWorkflow</code></td><td>Posts review messages and moves approved or rejected files</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="docs-callout">
+              <p>
+                The current webhook dispatches to <code>catalog_wf</code> and
+                <code>review_wf</code>. <code>generation_wf</code> is initialized
+                but is not called by the current webhook.
+              </p>
+            </div>
+          </section>
+
+          <section id="http-api">
+            <p class="eyebrow">02 · Public endpoint</p>
+            <h2>HTTP API</h2>
+            <h3>POST <code>/slack/webhook</code></h3>
+            <p>
+              Receives Slack Events API requests. The handler returns HTTP
+              <code>200</code> for the implemented branches, including ignored
+              events and most malformed or unsupported requests.
+            </p>
+
+            <h4>Request headers</h4>
+            <div class="docs-table-wrap">
+              <table>
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td><code>Content-Type: application/json</code></td><td>For event processing</td><td>Required for Flask's <code>request.is_json</code> branch.</td></tr>
+                  <tr><td><code>X-Slack-Retry-Num</code></td><td>No</td><td>Any value causes the request to be ignored as a Slack retry.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="docs-callout">
+              <p>
+                The application does not currently verify Slack request
+                signatures. Network-level protection or signature verification
+                should be added before exposing this endpoint to untrusted traffic.
+                For demonstration purposes, the key approval user is hard-coded as "ellie".
+              </p>
+            </div>
+
+            <h3>Slack URL verification</h3>
+            <p>Request:</p>
+            <pre><code>{
+  "type": "url_verification",
+  "challenge": "challenge-value"
+}</code></pre>
+            <p>Response: HTTP <code>200</code></p>
+            <pre><code>{
+  "challenge": "challenge-value"
+}</code></pre>
+
+            <h3>Slack event request</h3>
+            <p>The handler reads these fields from <code>event</code>:</p>
+            <div class="docs-table-wrap">
+              <table>
+                <thead><tr><th>Field</th><th>Use</th></tr></thead>
+                <tbody>
+                  <tr><td><code>user</code></td><td>Passed to <code>SlackService.is_user_ellie</code>.</td></tr>
+                  <tr><td><code>text</code></td><td>Compared with supported commands. Missing text becomes an empty string.</td></tr>
+                  <tr><td><code>channel</code></td><td>Passed to the selected workflow.</td></tr>
+                  <tr><td><code>thread_ts</code></td><td>Distinguishes a channel command from a thread reply.</td></tr>
+                  <tr><td><code>bot_id</code> / <code>subtype</code></td><td>Bot messages are ignored.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Example event envelope:</p>
+            <pre><code>{
+  "type": "event_callback",
+  "event": {
+    "type": "message",
+    "user": "U0123456789",
+    "text": "Generate Images",
+    "channel": "C0123456789"
+  }
+}</code></pre>
+
+            <h3>Response values</h3>
+            <div class="docs-table-wrap">
+              <table>
+                <thead><tr><th>Condition</th><th>HTTP</th><th>JSON response</th></tr></thead>
+                <tbody>
+                  <tr><td><code>X-Slack-Retry-Num</code> is present</td><td>200</td><td><code>{"status":"ignored_retry"}</code></td></tr>
+                  <tr><td>Bot event detected</td><td>200</td><td><code>{"status":"ignored_bot"}</code></td></tr>
+                  <tr><td>Authorized user starts generation</td><td>200</td><td><code>{"status":"processing_catalog"}</code></td></tr>
+                  <tr><td>Authorized user starts review</td><td>200</td><td><code>{"status":"processing_review"}</code></td></tr>
+                  <tr><td>Authorized user replies in a thread</td><td>200</td><td><code>{"status":"processing_reply"}</code></td></tr>
+                  <tr><td>Any other request</td><td>200</td><td><code>{"status":"ok"}</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>
+              Processing responses acknowledge Slack immediately. The actual
+              workflow runs in a newly created Python thread, so a
+              <code>processing_*</code> response means that work was scheduled,
+              not that it succeeded.
+            </p>
+          </section>
+
+          <section id="commands">
+            <p class="eyebrow">03 · Slack interface</p>
+            <h2>Supported Slack commands</h2>
+            <p>
+              Commands are only accepted when <code>SlackService.is_user_ellie</code>
+              returns <code>True</code>. Matching is case-insensitive for command text.
+            </p>
+
+            <h3>Generate Images</h3>
+            <p>
+              Send <code>Generate Images</code> as a top-level channel message.
+              The handler starts:
+            </p>
+            <pre><code>catalog_wf.run(channel_id, "generate images")</code></pre>
+            <p>
+              The workflow downloads <code>/catalog.csv</code>, builds a prompt for
+              each catalog row, submits the product image and prompt to ImaginePro,
+              waits for completion, and saves each result in Dropbox's
+              <code>/Generated</code> folder.
+            </p>
+            <p>
+              The source attempts to parse the final word of the trigger as a
+              product count. The webhook currently passes the literal string
+              <code>generate images</code>, so the parse fails and the default limit
+              is used.
+            </p>
+
+            <h3>Review</h3>
+            <p>
+              Send <code>Review</code> as a top-level channel message. The handler starts:
+            </p>
+            <pre><code>review_wf.start_review(channel_id)</code></pre>
+            <p>
+              The workflow lists files in <code>/Generated</code> and posts one
+              Slack message per file containing a temporary Dropbox link. Each
+              message asks the reviewer to reply in its thread with <code>Yes</code>
+              or <code>No</code>.
+            </p>
+
+            <h3>Yes / No</h3>
+            <p>
+              Reply to a review message in its Slack thread with <code>Yes</code> or
+              <code>No</code>. The handler starts:
+            </p>
+            <pre><code>review_wf.handle_reply(channel_id, thread_ts, text)</code></pre>
+            <p>
+              The workflow extracts the filename from backticks in the parent
+              message and moves the file from <code>/Generated</code> to
+              <code>/Approved</code> for <code>Yes</code>, or <code>/Rejected</code>
+              for <code>No</code>.
+            </p>
+          </section>
+
+          <section id="configuration">
+            <p class="eyebrow">04 · Environment</p>
+            <h2>Configuration API</h2>
+            <p>
+              <code>Config</code> loads environment variables with
+              <code>python-dotenv</code> when <code>config.py</code> is imported.
+            </p>
+            <h3>Environment variables</h3>
+            <div class="docs-table-wrap">
+              <table>
+                <thead><tr><th>Variable</th><th>Required by code</th><th>Use</th></tr></thead>
+                <tbody>
+                  <tr><td><code>SLACK_BOT_TOKEN</code></td><td>Yes for Slack calls</td><td>Slack Web API bot token. A warning is printed unless it starts with <code>xoxb-</code>.</td></tr>
+                  <tr><td><code>DROPBOX_ACCESS_TOKEN</code></td><td>Yes for Dropbox calls</td><td>Dropbox access token.</td></tr>
+                  <tr><td><code>IMAGEPRO_KEY</code></td><td>Yes for the active catalog workflow</td><td>ImaginePro bearer token.</td></tr>
+                  <tr><td><code>SLACK_CHANNEL</code></td><td>No</td><td>Defaults to <code>#imageteam</code>; currently stored but not used by the webhook.</td></tr>
+                  <tr><td><code>PORT</code></td><td>No</td><td>Listening port in local execution; defaults to <code>3000</code>.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>Dropbox paths</h3>
+            <pre><code>Config.CATALOG_PATH = "/catalog.csv"
+Config.GENERATED_FOLDER = "/Generated"
+Config.APPROVED_FOLDER = "/Approved"
+Config.REJECTED_FOLDER = "/Rejected"</code></pre>
+            <p>
+              <code>Config.validate()</code> prints warnings for missing or malformed
+              critical tokens. It does not raise an exception, so the application
+              can start with invalid credentials and fail later when a service call
+              is made.
+            </p>
+          </section>
+
+          <section id="services">
+            <p class="eyebrow">05 · Integrations</p>
+            <h2>Service APIs</h2>
+
+            <h3><code>SlackService</code></h3>
+            <p>Module: <code>services/slack_service.py</code></p>
+            <h4><code>SlackService(token: str)</code></h4>
+            <p>Creates a Slack SDK <code>WebClient</code> using <code>token</code>.</p>
+            <h4><code>is_user_ellie(user_id: str) -&gt; bool</code></h4>
+            <p>
+              Calls Slack <code>users.info</code> and checks the user's display name,
+              real name, and username. Returns <code>True</code> if any non-empty
+              value contains <code>ellie</code>, case-insensitively. Returns
+              <code>False</code> on <code>SlackApiError</code>.
+            </p>
+            <h4><code>send_message(channel: str, text: str, thread_ts: str = None)</code></h4>
+            <p>
+              Posts <code>text</code> to <code>channel</code>. If <code>thread_ts</code>
+              is provided, posts as a reply in that thread. Returns the Slack SDK response.
+            </p>
+            <h4><code>get_parent_message_text(channel: str, thread_ts: str) -&gt; str</code></h4>
+            <p>
+              Calls <code>conversations.replies</code> with <code>limit=1</code> and
+              returns the first message's text. Returns an empty string if no
+              messages are returned.
+            </p>
+
+            <h3><code>DropboxService</code></h3>
+            <p>Module: <code>services/dropbox_service.py</code></p>
+            <h4><code>DropboxService(access_token: str)</code></h4>
+            <p>Creates a Dropbox SDK client.</p>
+            <h4><code>download_csv(file_path: str) -&gt; str</code></h4>
+            <p>Downloads a Dropbox file and decodes its contents as UTF-8 text.</p>
+            <h4><code>upload_file(content_bytes: bytes, dropbox_path: str)</code></h4>
+            <p>Uploads bytes to <code>dropbox_path</code> using overwrite mode and returns the Dropbox SDK response.</p>
+            <h4><code>ensure_folder(folder_path: str)</code></h4>
+            <p>Creates a Dropbox folder. An existing-folder conflict is ignored; other Dropbox API errors are re-raised.</p>
+            <h4><code>list_files(folder_path: str) -&gt; list</code></h4>
+            <p>Lists one page of entries and returns only file metadata entries. Pagination is not implemented.</p>
+            <h4><code>get_temporary_link(file_path: str) -&gt; str</code></h4>
+            <p>Returns a temporary Dropbox link for a file.</p>
+            <h4><code>move_file(src_path: str, dest_path: str)</code></h4>
+            <p>Moves a file with Dropbox <code>autorename=True</code> and returns the Dropbox SDK response.</p>
+            <h4><code>save_image_from_url(image_url: str, file_name: str, folder_path: str = "/Generated") -&gt; str</code></h4>
+            <p>
+              Downloads an image with <code>requests</code>, ensures the target folder
+              exists, uploads the bytes, and returns the destination Dropbox path.
+              HTTP errors from the image download are raised.
+            </p>
+
+            <h3><code>ImgProService</code></h3>
+            <p>Module: <code>services/imagepro_service.py</code></p>
+            <h4><code>ImgProService(imgkey, dropbox_service)</code></h4>
+            <p>Stores the ImaginePro key and a Dropbox service used by <code>getResult</code>.</p>
+            <h4><code>startImgGen(imgurl, prompt) -&gt; str</code></h4>
+            <p>
+              Submits the source image URL and prompt to ImaginePro's universal
+              image endpoint using model <code>nano-banana-2</code>. On success,
+              returns the provider <code>messageId</code>. If the response cannot
+              provide a message ID, returns a string beginning with
+              <code>IMAGE GEN FOR ... FAILED:</code> instead of raising the provider error.
+            </p>
+            <h4><code>checkProcessing(proccode)</code></h4>
+            <p>
+              Polls ImaginePro's message endpoint for up to 60 seconds at
+              five-second intervals. Returns the result URI when the response
+              contains <code>uri</code>; raises <code>TimeoutError</code> when the
+              operation fails or times out.
+            </p>
+            <h4><code>getResult(proccode, productname)</code></h4>
+            <p>
+              Calls <code>checkProcessing</code>, creates a timestamped JPG filename,
+              downloads the result indirectly through
+              <code>DropboxService.save_image_from_url</code>, and saves it in
+              <code>/Generated</code>. The method has no explicit return value.
+            </p>
+          </section>
+
+          <section id="workflows">
+            <p class="eyebrow">06 · Application logic</p>
+            <h2>Workflow APIs</h2>
+
+            <h3><code>CatalogWorkflow</code></h3>
+            <p>Module: <code>workflows/catalog_workflow.py</code></p>
+            <h4><code>CatalogWorkflow(slack_service, dropbox_service, imgpro_service)</code></h4>
+            <p>Stores the injected Slack, Dropbox, and ImaginePro services.</p>
+            <h4><code>run(channel: str, triggerMessage: str)</code></h4>
+            <ol>
+              <li>Sends a progress message to Slack.</li>
+              <li>Downloads <code>/catalog.csv</code>.</li>
+              <li>Requires a <code>Category</code> CSV column; otherwise sends an error and returns.</li>
+              <li>Builds a prompt for each row with <code>prompt_builder.build_prompt</code>.</li>
+              <li>Submits the row's <code>Photo</code> URL and prompt to ImaginePro.</li>
+              <li>Waits 30 seconds, polls for the result, and saves it to <code>/Generated</code>.</li>
+              <li>Sends a Dropbox folder link when processing completes.</li>
+            </ol>
+            <p>
+              The CSV row is expected to contain at least <code>Product Name</code>
+              and <code>Photo</code>. Prompt construction also recognizes
+              <code>Color / Finish</code>, <code>Material</code>, <code>Shot Idea</code>,
+              and <code>Notes</code>.
+            </p>
+            <p>
+              The outer exception handler catches failures and sends
+              <code>Catalog extraction failed: ...</code> to Slack. It does not
+              re-raise the error to the Flask request because the workflow runs in
+              a background thread.
+            </p>
+
+            <h3><code>GenerationWorkflow</code></h3>
+            <p>Module: <code>workflows/generation_workflow.py</code></p>
+            <h4><code>GenerationWorkflow(slack_service, dropbox_service, image_generation_service, generated_folder: str)</code></h4>
+            <p>Stores the injected Slack, Dropbox, and image-generation services, along with the target Dropbox folder.</p>
+            <h4><code>run(channel: str, records: list)</code></h4>
+            <p>
+              Ensures the target folder exists, generates an image for each record
+              through the injected image-generation service, and uploads it as
+              <code>{generated_folder}/{record_id}.jpg</code>. <code>record_id</code>
+              is taken from <code>record["id"]</code> or defaults to
+              <code>item_N</code>. Per-record exceptions are logged and skipped.
+              A completion summary is sent to Slack.
+            </p>
+            <div class="docs-callout">
+              <p>
+                This workflow is not connected to the current
+                <code>/slack/webhook</code> command dispatch. The active command
+                path uses <code>ImgProService</code> through
+                <code>CatalogWorkflow</code>.
+              </p>
+            </div>
+
+            <h3><code>ReviewWorkflow</code></h3>
+            <p>Module: <code>workflows/review_workflow.py</code></p>
+            <h4><code>ReviewWorkflow(slack_service, dropbox_service, config)</code></h4>
+            <p>Stores the injected services and the configuration object containing Dropbox folder constants.</p>
+            <h4><code>start_review(channel: str)</code></h4>
+            <p>
+              Ensures <code>/Approved</code> and <code>/Rejected</code> exist, lists
+              files in <code>/Generated</code>, and sends a review message with a
+              temporary link for each file. If no files exist, sends a no-images
+              message. Lookup failures are reported to Slack.
+            </p>
+            <h4><code>handle_reply(channel: str, thread_ts: str, reply_text: str)</code></h4>
+            <p>
+              Accepts only <code>yes</code> and <code>no</code>. Reads the parent Slack
+              message, extracts the first backtick-delimited filename, moves the
+              corresponding <code>/Generated/{filename}</code> file to
+              <code>/Approved/{filename}</code> or <code>/Rejected/{filename}</code>,
+              and replies in the thread.
+            </p>
+          </section>
+
+          <section id="prompt-builder">
+            <p class="eyebrow">07 · Content generation</p>
+            <h2>Prompt builder API</h2>
+            <p>Module: <code>workflows/prompt_builder.py</code></p>
+            <h3><code>build_prompt(record: Dict[str, Any]) -&gt; str</code></h3>
+            <p>Builds an editorial product-photography prompt from a catalog row.</p>
+            <div class="docs-table-wrap">
+              <table>
+                <thead><tr><th>Record key</th><th>Behavior</th></tr></thead>
+                <tbody>
+                  <tr><td><code>Product Name</code></td><td>Product name; defaults to <code>product</code>.</td></tr>
+                  <tr><td><code>Color / Finish</code></td><td>Optional product attribute.</td></tr>
+                  <tr><td><code>Material</code></td><td>Optional product attribute.</td></tr>
+                  <tr><td><code>Shot Idea</code></td><td>Replaces the default scene description when non-empty.</td></tr>
+                  <tr><td><code>Notes</code></td><td>Added as an additional design cue unless it contains <code>Ellie:</code>.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>
+              The returned prompt always includes the product context, scene, soft
+              natural light, warm modern styling, realistic materials, crisp detail,
+              an in-context product presentation, and ecommerce/social-use guidance.
+            </p>
+            <p>Example:</p>
+            <pre><code>build_prompt({
+    "Product Name": "Serving Bowl Large",
+    "Color / Finish": "Forest",
+    "Material": "Stoneware",
+    "Shot Idea": "on a set dinner table with food in it",
+    "Notes": "top seller"
+})</code></pre>
+          </section>
+
+          <section id="catalog">
+            <p class="eyebrow">08 · Data contract</p>
+            <h2>Catalog contract</h2>
+            <p>
+              The catalog is downloaded from Dropbox as <code>/catalog.csv</code>
+              and parsed with Python's <code>csv.DictReader</code>. The required
+              header is <code>Category</code>; the following fields drive the
+              current prompt and generation path:
+            </p>
+            <pre><code>Category,Product Name,Photo,Color / Finish,Material,Shot Idea,Notes
+Serveware,Serving Bowl Large,https://example.com/bowl.jpg,Forest,Stoneware,on a set dinner table,top seller</code></pre>
+            <p>
+              <code>Photo</code> must be a URL accessible to ImaginePro. The
+              application does not validate URL format, image type, dimensions, or
+              row completeness before submitting the request.
+            </p>
+          </section>
+
+          <section id="flow">
+            <p class="eyebrow">09 · System behavior</p>
+            <h2>End-to-end flow</h2>
+            <div class="docs-flow">
+              <pre><code>Slack event
+  -> POST /slack/webhook
+  -> retry/bot filtering
+  -> Slack users.info authorization check
+  -> background thread
+     -> Generate Images: Dropbox catalog -> prompt builder -> ImaginePro -> Dropbox /Generated
+     -> Review: Dropbox /Generated -> Slack review messages
+     -> Yes/No reply: parent Slack message -> Dropbox move -> Slack confirmation</code></pre>
+            </div>
+          </section>
+
+          <section id="operations">
+            <p class="eyebrow">10 · Reliability notes</p>
+            <h2>Error and operational behavior</h2>
+            <ul>
+              <li>Service objects are initialized while <code>app.py</code> is imported. Initialization errors are printed, but the module does not stop startup or return a health-check failure.</li>
+              <li>Workflow work is started with <code>threading.Thread(...).start()</code> and is not tracked, joined, retried, or persisted.</li>
+              <li>Slack receives an immediate acknowledgement before image generation or Dropbox work completes.</li>
+              <li>Slack signature verification is absent.</li>
+              <li>Dropbox folder listing is not paginated.</li>
+              <li>The catalog limit check is <code>if i == numproducts</code>, so a numeric limit currently processes <code>numproducts + 1</code> rows. The webhook's literal <code>generate images</code> command falls back to the default value of <code>1</code>.</li>
+              <li><code>CatalogWorkflow</code> sends a hard-coded Dropbox folder URL after processing rather than deriving a link from the configured folder.</li>
+              <li><code>ImgProService.getResult</code> saves the image but returns <code>None</code>.</li>
+              <li><code>GenerationWorkflow</code> is available as a module API but is not reachable through the current Slack endpoint; the active image-generation path is <code>CatalogWorkflow</code> with <code>ImgProService</code>.</li>
+            </ul>
+          </section>
+
+          <section id="execution">
+            <p class="eyebrow">11 · Deployment</p>
+            <h2>Local execution</h2>
+            <p>
+              Install the dependencies listed in <code>requirements.txt</code>,
+              provide the environment variables above, and run:
+            </p>
+            <pre><code>python app.py</code></pre>
+            <p>
+              The local server binds to <code>0.0.0.0</code> and uses
+              <code>PORT</code>, defaulting to <code>3000</code>. For deployment,
+              use the Gunicorn command below or the included <code>Procfile</code>.
+            </p>
+            <pre><code>gunicorn --bind 0.0.0.0:$PORT --workers 2 app:app</code></pre>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <p>© <span id="year"></span> Jesson Go</p>
+      <a href="#top">Back to top ↑</a>
+    </div>
+  </footer>
+</body>
+</html>
