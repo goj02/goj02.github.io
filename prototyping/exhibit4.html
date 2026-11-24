@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Exhibit 3</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #eee;
+    }
+
+    body {
+      padding: 50px 100px;
+      box-sizing: border-box;
+    }
+
+    #sceneWrap {
+      position: relative;
+      width: 100%;
+      height: calc(70vh - 50px);
+      overflow: hidden;
+      margin-bottom: 50px;
+    }
+
+    #info {
+      height: calc(30vh - 50px);
+      padding: 16px;
+      background: #1b1b1b;
+      box-sizing: border-box;
+      overflow: auto;
+    }
+
+    #popup {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      display: none;
+      max-width: 280px;
+      background: rgba(0, 0, 0, 0.88);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 10px;
+      z-index: 5;
+      pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="sceneWrap">
+    <div id="popup"></div>
+  </div>
+  <div id="info">Short description of the scene goes here.</div>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+
+    const container = document.getElementById("sceneWrap");
+    const popup = document.getElementById("popup");
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 5000);
+    camera.position.set(0, 2, 8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 0.5;
+    controls.maxDistance = 2000;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.3));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.4);
+    dir.position.set(5, 10, 7);
+    scene.add(dir);
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    const clickableMeshes = [];
+    const originalMaterials = new Map();
+    let hoveredMesh = null;
+
+    const metadata = {
+      "Chair": "A chair you can inspect.",
+      "Table": "A table in the room.",
+      "Lamp": "A lamp with a description."
+    };
+
+    function showPopup(name) {
+      popup.textContent = `${name}: ${metadata[name] || "No description available."}`;
+      popup.style.display = "block";
+    }
+
+    function hidePopup() {
+      popup.style.display = "none";
+    }
+
+    function saveMaterialState(mesh) {
+      if (originalMaterials.has(mesh)) return;
+      if (Array.isArray(mesh.material)) {
+        originalMaterials.set(mesh, mesh.material.map(m => (m && m.clone ? m.clone() : m)));
+      } else {
+        originalMaterials.set(mesh, mesh.material && mesh.material.clone ? mesh.material.clone() : mesh.material);
+      }
+    }
+
+    function restoreMaterial(mesh) {
+      const orig = originalMaterials.get(mesh);
+      if (!orig) return;
+      if (Array.isArray(orig)) {
+        mesh.material = orig.map(m => (m && m.clone ? m.clone() : m));
+      } else {
+        mesh.material = orig.clone ? orig.clone() : orig;
+      }
+    }
+
+    function setHighlight(mesh, enabled) {
+      if (!mesh || !mesh.material) return;
+      saveMaterialState(mesh);
+
+      const apply = (mat) => {
+        if (!mat) return;
+        if (mat.emissive) {
+          mat.emissive.set(enabled ? 0x4466ff : 0x000000);
+          mat.emissiveIntensity = enabled ? 0.9 : 0.0;
+        }
+        if (mat.color && !mat.emissive) {
+          if (enabled) mat.color.offsetHSL(0.02, 0.05, 0.12);
+        }
+      };
+
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach(apply);
+        if (!enabled) restoreMaterial(mesh);
+      } else {
+        apply(mesh.material);
+        if (!enabled) restoreMaterial(mesh);
+      }
+    }
+
+    function collectClickableMeshes(root) {
+      root.traverse((child) => {
+        if (child && child.isMesh) {
+          clickableMeshes.push(child);
+        }
+      });
+    }
+
+    function getMetaKey(mesh) {
+      if (!mesh) return null;
+      const n = (mesh.name || "").trim();
+      if (n && metadata[n]) return n;
+      const p = (mesh.parent && mesh.parent.name || "").trim();
+      if (p && metadata[p]) return p;
+      return n || p || null;
+    }
+
+    function updateHover(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(clickableMeshes, true);
+      const hit = hits.length ? hits[0].object : null;
+
+      if (hoveredMesh && hoveredMesh !== hit) {
+        setHighlight(hoveredMesh, false);
+        hoveredMesh = null;
+        renderer.domElement.style.cursor = "default";
+      }
+
+      if (hit) {
+        hoveredMesh = hit;
+        setHighlight(hoveredMesh, true);
+        renderer.domElement.style.cursor = "pointer";
+      }
+    }
+
+    function handleClick() {
+      if (!hoveredMesh) return;
+      const key = getMetaKey(hoveredMesh);
+      if (key) showPopup(key);
+    }
+
+    function fitCameraToObject(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      controls.target.copy(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = THREE.MathUtils.degToRad(camera.fov);
+
+      let cameraDistance = (maxDim / 2) / Math.tan(fov / 2);
+      cameraDistance *= 2.0;
+
+      camera.position.set(center.x, center.y, center.z + cameraDistance);
+      camera.near = Math.max(0.01, maxDim / 1000);
+      camera.far = Math.max(1000, maxDim * 20);
+      camera.updateProjectionMatrix();
+      camera.lookAt(center);
+
+      controls.minDistance = Math.max(0.1, maxDim / 100);
+      controls.maxDistance = maxDim * 20;
+      controls.update();
+    }
+
+    const loader = new FBXLoader();
+    loader.load(
+      "./exploratorium-v3.fbx",
+      (object) => {
+        collectClickableMeshes(object);
+        scene.add(object);
+        fitCameraToObject(object);
+      },
+      undefined,
+      (err) => console.error(err)
+    );
+
+    window.addEventListener("pointermove", updateHover);
+    window.addEventListener("click", handleClick);
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape") hidePopup(); });
+
+    window.addEventListener("resize", () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

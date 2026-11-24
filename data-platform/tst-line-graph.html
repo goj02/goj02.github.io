@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coordinate Plotter</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f7fb;
+      }
+      .app {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 16px;
+      }
+      label {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+      input, button, textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px;
+        border: 1px solid #d6d9e0;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+      button {
+        cursor: pointer;
+        background: #2563eb;
+        color: white;
+        border: none;
+        font-weight: 600;
+      }
+      button.secondary {
+        background: #64748b;
+      }
+      button.danger {
+        background: #dc2626;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr auto;
+        gap: 8px;
+        margin-bottom: 8px;
+        align-items: end;
+      }
+      .series {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      .series-header {
+        display: grid;
+        grid-template-columns: 1fr 140px auto;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .points {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .point {
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        border-radius: 999px;
+        padding: 6px 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .point button {
+        width: auto;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #ef4444;
+      }
+      svg {
+        width: 100%;
+        height: 600px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+      }
+      .hint {
+        color: #64748b;
+        font-size: 13px;
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .series-header, .row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useMemo, useState } = React;
+
+      function App() {
+        const [title, setTitle] = useState("Coordinate Plotter");
+        const [xLabel, setXLabel] = useState("X Axis");
+        const [yLabel, setYLabel] = useState("Y Axis");
+        const [series, setSeries] = useState([
+          { id: 1, name: "Series 1", color: "#2563eb", points: [{ x: 2, y: 3 }, { x: 4, y: 7 }] }
+        ]);
+        const [newSeriesName, setNewSeriesName] = useState("Series 2");
+        const [newSeriesColor, setNewSeriesColor] = useState("#ef4444");
+        const [xInput, setXInput] = useState("");
+        const [yInput, setYInput] = useState("");
+        const [activeSeriesId, setActiveSeriesId] = useState(1);
+
+        const allPoints = useMemo(() => series.flatMap(s => s.points.map(p => ({ ...p, color: s.color }))), [series]);
+
+        const bounds = useMemo(() => {
+          if (allPoints.length === 0) return { minX: -10, maxX: 10, minY: -10, maxY: 10 };
+          const xs = allPoints.map(p => p.x);
+          const ys = allPoints.map(p => p.y);
+          const padX = Math.max(1, (Math.max(...xs) - Math.min(...xs)) * 0.15);
+          const padY = Math.max(1, (Math.max(...ys) - Math.min(...ys)) * 0.15);
+          return {
+            minX: Math.min(...xs) - padX,
+            maxX: Math.max(...xs) + padX,
+            minY: Math.min(...ys) - padY,
+            maxY: Math.max(...ys) + padY
+          };
+        }, [allPoints]);
+
+        const width = 900;
+        const height = 600;
+        const margin = { top: 50, right: 40, bottom: 60, left: 70 };
+        const plotW = width - margin.left - margin.right;
+        const plotH = height - margin.top - margin.bottom;
+
+        const sx = (x) => margin.left + ((x - bounds.minX) / (bounds.maxX - bounds.minX)) * plotW;
+        const sy = (y) => margin.top + plotH - ((y - bounds.minY) / (bounds.maxY - bounds.minY)) * plotH;
+
+        const xTicks = 8;
+        const yTicks = 8;
+
+        const addSeries = () => {
+          if (!newSeriesName.trim()) return;
+          const id = Date.now();
+          setSeries([...series, { id, name: newSeriesName.trim(), color: newSeriesColor, points: [] }]);
+          setActiveSeriesId(id);
+          setNewSeriesName(`Series ${series.length + 1}`);
+        };
+
+        const addPoint = () => {
+          const x = parseFloat(xInput);
+          const y = parseFloat(yInput);
+          if (Number.isNaN(x) || Number.isNaN(y)) return;
+          setSeries(series.map(s => s.id === activeSeriesId ? { ...s, points: [...s.points, { x, y }] } : s));
+          setXInput("");
+          setYInput("");
+        };
+
+        const removePoint = (seriesId, index) => {
+          setSeries(series.map(s => s.id === seriesId ? { ...s, points: s.points.filter((_, i) => i !== index) } : s));
+        };
+
+        const removeSeries = (seriesId) => {
+          const next = series.filter(s => s.id !== seriesId);
+          setSeries(next.length ? next : [{ id: 1, name: "Series 1", color: "#2563eb", points: [] }]);
+          if (activeSeriesId === seriesId) setActiveSeriesId(next[0]?.id || 1);
+        };
+
+        return (
+          <div className="app">
+            <div className="card">
+              <h1 style={{ marginTop: 0 }}>{title}</h1>
+              <p className="hint">Enter points into different series, then plot them on the graph.</p>
+            </div>
+
+            <div className="grid">
+              <div>
+                <div className="card">
+                  <h3>Labels</h3>
+                  <label>Title</label>
+                  <input value={title} onChange={e => setTitle(e.target.value)} />
+                  <div style={{ height: 10 }} />
+                  <label>X Axis Label</label>
+                  <input value={xLabel} onChange={e => setXLabel(e.target.value)} />
+                  <div style={{ height: 10 }} />
+                  <label>Y Axis Label</label>
+                  <input value={yLabel} onChange={e => setYLabel(e.target.value)} />
+                </div>
+
+                <div className="card">
+                  <h3>Add Series</h3>
+                  <label>Series Name</label>
+                  <input value={newSeriesName} onChange={e => setNewSeriesName(e.target.value)} />
+                  <div style={{ height: 10 }} />
+                  <label>Color</label>
+                  <input type="color" value={newSeriesColor} onChange={e => setNewSeriesColor(e.target.value)} style={{ height: 44, padding: 4 }} />
+                  <div style={{ height: 10 }} />
+                  <button onClick={addSeries}>Add Series</button>
+                </div>
+
+                <div className="card">
+                  <h3>Add Point</h3>
+                  <label>Active Series</label>
+                  <select value={activeSeriesId} onChange={e => setActiveSeriesId(Number(e.target.value))} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #d6d9e0" }}>
+                    {series.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                  <div style={{ height: 10 }} />
+                  <div className="row">
+                    <div>
+                      <label>X</label>
+                      <input value={xInput} onChange={e => setXInput(e.target.value)} />
+                    </div>
+                    <div>
+                      <label>Y</label>
+                      <input value={yInput} onChange={e => setYInput(e.target.value)} />
+                    </div>
+                    <div>
+                      <button onClick={addPoint}>Add</button>
+                    </div>
+                  </div>
+                </div>
+
+                {series.map(s => (
+                  <div className="card series" key={s.id}>
+                    <div className="series-header">
+                      <input
+                        value={s.name}
+                        onChange={e => setSeries(series.map(x => x.id === s.id ? { ...x, name: e.target.value } : x))}
+                      />
+                      <input
+                        type="color"
+                        value={s.color}
+                        onChange={e => setSeries(series.map(x => x.id === s.id ? { ...x, color: e.target.value } : x))}
+                      />
+                      <button className="danger" onClick={() => removeSeries(s.id)}>Delete</button>
+                    </div>
+                    <div className="points">
+                      {s.points.length === 0 ? <span className="hint">No points yet</span> : s.points.map((p, i) => (
+                        <span className="point" key={i}>
+                          ({p.x}, {p.y})
+                          <button onClick={() => removePoint(s.id, i)}>×</button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="card">
+                <svg viewBox={`0 0 ${width} ${height}`}>
+                  <text x={width / 2} y={25} textAnchor="middle" fontSize="22" fontWeight="700">{title}</text>
+
+                  {Array.from({ length: xTicks + 1 }).map((_, i) => {
+                    const x = bounds.minX + (i / xTicks) * (bounds.maxX - bounds.minX);
+                    const px = sx(x);
+                    return (
+                      <g key={`xt-${i}`}>
+                        <line x1={px} y1={margin.top} x2={px} y2={height - margin.bottom} stroke="#e5e7eb" />
+                        <text x={px} y={height - 35} textAnchor="middle" fontSize="12">{x.toFixed(1)}</text>
+                      </g>
+                    );
+                  })}
+
+                  {Array.from({ length: yTicks + 1 }).map((_, i) => {
+                    const y = bounds.minY + (i / yTicks) * (bounds.maxY - bounds.minY);
+                    const py = sy(y);
+                    return (
+                      <g key={`yt-${i}`}>
+                        <line x1={margin.left} y1={py} x2={width - margin.right} y2={py} stroke="#e5e7eb" />
+                        <text x={50} y={py + 4} textAnchor="end" fontSize="12">{y.toFixed(1)}</text>
+                      </g>
+                    );
+                  })}
+
+                  <line x1={margin.left} y1={sy(0)} x2={width - margin.right} y2={sy(0)} stroke="#111827" strokeWidth="2" />
+                  <line x1={sx(0)} y1={margin.top} x2={sx(0)} y2={height - margin.bottom} stroke="#111827" strokeWidth="2" />
+
+                  <text x={width / 2} y={height - 15} textAnchor="middle" fontSize="14" fontWeight="600">{xLabel}</text>
+                  <text x={18} y={height / 2} transform={`rotate(-90 18 ${height / 2})`} textAnchor="middle" fontSize="14" fontWeight="600">{yLabel}</text>
+
+                  {series.map(s => (
+                    s.points.map((p, i) => (
+                      <circle key={`${s.id}-${i}`} cx={sx(p.x)} cy={sy(p.y)} r="5.5" fill={s.color} />
+                    ))
+                  ))}
+
+                  <rect x={width - 170} y={20} width="150" height={30 + series.length * 22} rx="8" fill="white" stroke="#e5e7eb" />
+                  {series.map((s, i) => (
+                    <g key={s.id}>
+                      <circle cx={width - 155} cy={45 + i * 22} r="5" fill={s.color} />
+                      <text x={width - 142} y={49 + i * 22} fontSize="13">{s.name}</text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>

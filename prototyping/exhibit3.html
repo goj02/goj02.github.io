@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FBX Viewer</title>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+    }
+    .page { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    #roomContainer {
+      width: 100%;
+      height: 70vh;
+      min-height: 500px;
+      border: 1px solid #333;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      background: #000;
+      cursor: default;
+    }
+    #loading {
+      position: absolute;
+      inset: 12px auto auto 12px;
+      z-index: 2;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      pointer-events: none;
+    }
+    #description {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: #1b1b1b;
+      border: 1px solid #333;
+      border-radius: 12px;
+      line-height: 1.5;
+    }
+    #popup {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.55);
+      z-index: 10;
+    }
+    #popupContent {
+      background: #fff;
+      color: #111;
+      max-width: 360px;
+      width: calc(100% - 32px);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    #closePopup {
+      margin-top: 14px;
+      padding: 8px 12px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #111;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div id="roomContainer">
+      <div id="loading">Loading model and metadata…</div>
+    </div>
+    <div id="description">
+      An FBX scene loaded in Three.js. Hover and click the named objects listed in the metadata file.
+    </div>
+  </div>
+
+  <div id="popup">
+    <div id="popupContent">
+      <h3 id="popupTitle"></h3>
+      <p id="popupText"></p>
+      <button id="closePopup">Close</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
+    const container = document.getElementById('roomContainer');
+    const loading = document.getElementById('loading');
+    const popup = document.getElementById('popup');
+    const popupTitle = document.getElementById('popupTitle');
+    const popupText = document.getElementById('popupText');
+    const closePopup = document.getElementById('closePopup');
+
+    const MODEL_URL = './exploratorium-v3.fbx';
+    // const META_URL = './objects.json';
+
+    const META_URL = [
+    { name: "dais", description: "This is where all of the objects will stand." },
+    { name: "display", description: "Here's where the description should listed." }
+  ];
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x20242a);
+    scene.fog = new THREE.Fog(0x20242a, 10, 60);
+
+    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 2, 8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.enablePan = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    scene.add(hemi);
+
+    let hovered = null;
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const clickable = [];
+    const originalMaterials = new Map();
+    let meta = META_URL;
+
+    function showPopup(title, text) {
+      popupTitle.textContent = title;
+      popupText.textContent = text;
+      popup.style.display = 'flex';
+    }
+
+    closePopup.addEventListener('click', () => popup.style.display = 'none');
+    popup.addEventListener('click', (e) => {
+      if (e.target === popup) popup.style.display = 'none';
+    });
+
+    function setHighlight(mesh, on) {
+      if (!mesh || !mesh.material) return;
+      if (on) {
+        if (!originalMaterials.has(mesh)) originalMaterials.set(mesh, mesh.material.clone());
+        const m = mesh.material;
+        if ('emissive' in m) m.emissive.setHex(0x444444);
+        if ('roughness' in m) m.roughness = Math.max(0, m.roughness - 0.15);
+        if ('metalness' in m) m.metalness = Math.min(1, (m.metalness ?? 0) + 0.1);
+      } else if (originalMaterials.has(mesh)) {
+        mesh.material.dispose?.();
+        mesh.material = originalMaterials.get(mesh).clone();
+      }
+    }
+
+    function updateHover(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(clickable, true);
+      const hit = hits.length ? hits[0].object : null;
+      const root = hit ? hit.userData.hoverRoot || hit : null;
+
+      if (hovered && hovered !== root) setHighlight(hovered, false);
+      hovered = root;
+
+      if (hovered) {
+        setHighlight(hovered, true);
+        container.style.cursor = 'pointer';
+      } else {
+        container.style.cursor = 'default';
+      }
+    }
+
+    function getMetaForName(name) {
+      return meta.find(o => o.name === name);
+    }
+
+    renderer.domElement.addEventListener('pointermove', updateHover);
+
+    renderer.domElement.addEventListener('pointerdown', (event) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(clickable, true);
+      if (!hits.length) return;
+
+      const hit = hits[0].object.userData.hoverRoot || hits[0].object;
+      const info = getMetaForName(hit.name);
+      if (info) showPopup(info.name, info.description);
+    });
+
+    //#########use this if loading from a json file
+    // async function loadMetadata() {
+    //   const res = await fetch(META_URL);
+    //   return await res.json();
+    // }
+
+    function loadMetadata() {
+       return Promise.resolve(meta);
+    }
+
+    function collectMaterialsAndLights(root) {
+      root.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          if (child.name) clickable.push(child);
+        }
+        if (child.isLight) scene.add(child);
+      });
+    }
+
+    function markClickableByNames(root, names) {
+      root.traverse((child) => {
+        if (child.isMesh && names.includes(child.name)) {
+          child.userData.hoverRoot = child;
+          clickable.push(child);
+        }
+      });
+    }
+
+    async function init() {
+      meta = await loadMetadata();
+
+      const loader = new FBXLoader();
+      loader.load(
+        MODEL_URL,
+        (fbx) => {
+          fbx.scale.setScalar(0.01);
+          scene.add(fbx);
+          collectMaterialsAndLights(fbx);
+          markClickableByNames(fbx, meta.map(o => o.name));
+
+          const box = new THREE.Box3().setFromObject(fbx);
+          const size = box.getSize(new THREE.Vector3()).length();
+          const center = box.getCenter(new THREE.Vector3());
+
+          controls.target.copy(center);
+          camera.position.copy(center).add(new THREE.Vector3(0, size * 0.2, size * 0.6));
+          controls.update();
+
+          loading.style.display = 'none';
+        },
+        undefined,
+        (err) => {
+          loading.textContent = 'Failed to load FBX or metadata.';
+          console.error(err);
+        }
+      );
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+    init();
+
+    window.addEventListener('resize', () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+  </script>
+
+
+  <!-- <script type="module">
+  import * as THREE from "three";
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+  import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+
+//   const container = document.getElementById("sceneWrap");
+  const container = document.getElementById("roomContainer");
+  const popup = document.getElementById("popup");
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x111111);
+
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+  const dir = new THREE.DirectionalLight(0xffffff, 1.5);
+  dir.position.set(3, 5, 2);
+  scene.add(dir);
+
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+
+  let hoveredMesh = null;
+  const clickableMeshes = [];
+  const originalMaterials = new Map();
+
+  const metadata = {
+    "dais": "Platform that holds everything.",
+    "Sphere": "Should be the sun",
+    "display": "There's going to be some text here."
+  };
+
+  function showPopup(name) {
+    popup.textContent = `${name}: ${metadata[name] || "No description available."}`;
+    popup.style.display = "block";
+  }
+
+  function hidePopup() {
+    popup.style.display = "none";
+  }
+
+  function storeOriginalMaterial(mesh) {
+    if (originalMaterials.has(mesh)) return;
+
+    if (Array.isArray(mesh.material)) {
+      originalMaterials.set(mesh, mesh.material.map(m => m.clone()));
+    } else if (mesh.material && typeof mesh.material.clone === "function") {
+      originalMaterials.set(mesh, mesh.material.clone());
+    } else {
+      originalMaterials.set(mesh, null);
+    }
+  }
+
+  function setHighlight(mesh, enabled) {
+    if (!mesh) return;
+    storeOriginalMaterial(mesh);
+
+    if (Array.isArray(mesh.material)) {
+      if (enabled) {
+        mesh.material.forEach(mat => {
+          if (mat && "emissive" in mat) {
+            mat.emissive.set(0x3333ff);
+            mat.emissiveIntensity = 0.8;
+          }
+        });
+      } else {
+        const orig = originalMaterials.get(mesh);
+        if (orig) mesh.material = orig.map(m => m.clone());
+      }
+    } else if (mesh.material) {
+      if (enabled) {
+        if ("emissive" in mesh.material) {
+          mesh.material.emissive.set(0x3333ff);
+          mesh.material.emissiveIntensity = 0.8;
+        } else {
+          mesh.material.color?.set(0x66aaff);
+        }
+      } else {
+        const orig = originalMaterials.get(mesh);
+        if (orig) mesh.material = orig.clone();
+      }
+    }
+  }
+
+  function collectClickableMeshes(root) {
+    root.traverse((child) => {
+      if (child && child.isMesh && child.name) {
+        clickableMeshes.push(child);
+      }
+    });
+  }
+
+  function findMetadataName(mesh) {
+    if (!mesh) return null;
+    const name = mesh.name?.trim();
+    if (name && metadata[name]) return name;
+
+    const parentName = mesh.parent?.name?.trim();
+    if (parentName && metadata[parentName]) return parentName;
+
+    return name || parentName || null;
+  }
+
+  function updateHover(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(clickableMeshes, true);
+
+    const hit = hits.length ? hits[0].object : null;
+
+    if (hoveredMesh && hoveredMesh !== hit) {
+      setHighlight(hoveredMesh, false);
+      hoveredMesh = null;
+      renderer.domElement.style.cursor = "default";
+    }
+
+    if (hit) {
+      hoveredMesh = hit;
+      setHighlight(hoveredMesh, true);
+      renderer.domElement.style.cursor = "pointer";
+    }
+  }
+
+  function handleClick() {
+    if (!hoveredMesh) return;
+    const key = findMetadataName(hoveredMesh);
+    if (key) showPopup(key);
+  }
+
+  async function init() {
+    const loader = new FBXLoader();
+
+    loader.load("./exploratorium-v3.fbx", (object) => {
+      object.traverse((child) => {
+        if (child && child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+
+      collectClickableMeshes(object);
+      scene.add(object);
+
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      controls.target.copy(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * Math.PI / 180;
+      let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+      cameraZ *= 1.6;
+
+      camera.position.set(center.x, center.y + maxDim * 0.2, center.z + cameraZ);
+      camera.lookAt(center);
+    });
+  }
+
+  window.addEventListener("pointermove", updateHover);
+  window.addEventListener("click", handleClick);
+  window.addEventListener("keydown", (e) => { if (e.key === "Escape") hidePopup(); });
+
+  window.addEventListener("resize", () => {
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  await init();
+  animate();
+</script> -->
+
+
+
+
+</body>
+</html>

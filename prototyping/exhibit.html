@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FBX Viewer + Metadata</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: system-ui, sans-serif; }
+    #app { display: grid; grid-template-columns: 1fr 340px; width: 100%; height: 100%; background: #111; }
+    #viewer { position: relative; width: 100%; height: 100%; }
+    #ui {
+      background: #1b1b1b; color: #eee; overflow: auto; border-left: 1px solid #333;
+      padding: 14px; box-sizing: border-box;
+    }
+    .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .tab {
+      border: 1px solid #444; background: #222; color: #ddd; padding: 8px 10px; cursor: pointer;
+      border-radius: 8px;
+    }
+    .tab.active { background: #3a3a3a; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .row { margin: 10px 0; }
+    label { display: block; font-size: 12px; color: #bbb; margin-bottom: 4px; }
+    input[type="range"] { width: 100%; }
+    .meta-card {
+      background: #242424; border: 1px solid #333; border-radius: 10px; padding: 12px; margin-top: 10px;
+    }
+    .muted { color: #999; }
+    .highlighted { outline: 2px solid #ffd54a; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="viewer"></div>
+
+    <aside id="ui">
+      <div class="tabs">
+        <button class="tab active" data-tab="inspect">Inspect</button>
+        <button class="tab" data-tab="budget">Budget</button>
+        <button class="tab" data-tab="lighting">Lighting</button>
+      </div>
+
+      <section id="inspect" class="panel active">
+        <div class="muted">Hover an object to highlight it. Click to show metadata.</div>
+        <div id="selectedMeta" class="meta-card">No object selected.</div>
+      </section>
+
+      <section id="budget" class="panel">
+        <div class="muted">Estimated budget by class</div>
+        <div id="budgetList" class="meta-card"></div>
+        <div id="budgetTotal" class="meta-card"></div>
+      </section>
+
+      <section id="lighting" class="panel">
+        <div class="row">
+          <label for="ambient">Ambient Light</label>
+          <input id="ambient" type="range" min="0" max="3" step="0.01" value="0.9">
+        </div>
+        <div class="row">
+          <label for="dirLight">Directional Light</label>
+          <input id="dirLight" type="range" min="0" max="5" step="0.01" value="2.2">
+        </div>
+        <div class="row">
+          <label for="envIntensity">Material / Env Intensity</label>
+          <input id="envIntensity" type="range" min="0" max="4" step="0.01" value="1.2">
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <script type="module">
+    import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+    import { FBXLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/FBXLoader.js";
+    import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+
+    const viewer = document.getElementById("viewer");
+    const selectedMeta = document.getElementById("selectedMeta");
+    const budgetList = document.getElementById("budgetList");
+    const budgetTotal = document.getElementById("budgetTotal");
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x101114);
+
+    const camera = new THREE.PerspectiveCamera(50, viewer.clientWidth / viewer.clientHeight, 0.1, 2000);
+    camera.position.set(4, 3, 6);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.physicallyCorrectLights = true;
+    viewer.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    dirLight.position.set(6, 10, 5);
+    scene.add(dirLight);
+
+    const hemi = new THREE.HemisphereLight(0xbfd9ff, 0x2b2b2b, 0.8);
+    scene.add(hemi);
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let hovered = null;
+    let selected = null;
+
+    // Example metadata JSON shape:
+    // {
+    //   "objects": {
+    //     "Chair_01": { "class": "furniture", "name": "Chair 01", "cost": 120, "notes": "..." },
+    //     "Lamp_01":  { "class": "lighting",  "name": "Lamp 01",  "cost": 85 }
+    //   },
+    //   "budgetClasses": ["furniture","lighting"]
+    // }
+    let metadata = {
+      objects: {},
+      budgetClasses: ["furniture", "lighting"]
+    };
+
+    async function loadMetadata() {
+      // Replace with your JSON path
+      const res = await fetch("./metadata.json");
+      metadata = await res.json();
+      updateBudget();
+    }
+
+    function setMaterialLook(root) {
+      root.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(applyMat);
+          } else if (obj.material) {
+            applyMat(obj.material);
+          }
+        }
+      });
+    }
+
+    function applyMat(mat) {
+      mat.metalness = mat.metalness ?? 0.15;
+      mat.roughness = mat.roughness ?? 0.65;
+      mat.envMapIntensity = 1.2;
+      mat.needsUpdate = true;
+    }
+
+    function updateSelectedPanel(name) {
+      const info = metadata.objects[name];
+      if (!info) {
+        selectedMeta.innerHTML = "No metadata found for this object.";
+        return;
+      }
+
+      selectedMeta.innerHTML = `
+        <div><strong>${info.name ?? name}</strong></div>
+        <div class="muted">Node: ${name}</div>
+        <div>Class: ${info.class ?? "—"}</div>
+        <div>Approx cost: ${info.cost != null ? `$${Number(info.cost).toLocaleString()}` : "—"}</div>
+        <div style="margin-top:8px;">${info.notes ?? ""}</div>
+      `;
+    }
+
+    function updateBudget() {
+      const totals = {};
+      let grand = 0;
+
+      for (const [name, info] of Object.entries(metadata.objects || {})) {
+        const cls = info.class || "uncategorized";
+        const cost = Number(info.cost || 0);
+        if (metadata.budgetClasses?.length && !metadata.budgetClasses.includes(cls)) continue;
+        totals[cls] = (totals[cls] || 0) + cost;
+        grand += cost;
+      }
+
+      budgetList.innerHTML = Object.entries(totals).length
+        ? Object.entries(totals).map(([cls, total]) => `<div>${cls}: <strong>$${total.toLocaleString()}</strong></div>`).join("")
+        : "<div class='muted'>No budget classes found.</div>";
+
+      budgetTotal.innerHTML = `<strong>Total estimated budget:</strong> $${grand.toLocaleString()}`;
+    }
+
+    function clearHover() {
+      if (hovered && hovered.material && hovered.userData._origEmissive) {
+        hovered.material.emissive.copy(hovered.userData._origEmissive);
+      }
+      hovered = null;
+      renderer.domElement.style.cursor = "default";
+    }
+
+    function applyHover(mesh) {
+      if (!mesh.material) return;
+      hovered = mesh;
+      renderer.domElement.style.cursor = "pointer";
+
+      if (mesh.material.emissive) {
+        mesh.userData._origEmissive = mesh.material.emissive.clone();
+        mesh.material.emissive.setHex(0x444400);
+      }
+    }
+
+    function traverseToClickable(root) {
+      const list = [];
+      root.traverse((obj) => {
+        if (obj.isMesh) list.push(obj);
+      });
+      return list;
+    }
+
+    const loader = new FBXLoader();
+    let modelRoot = null;
+
+    // Replace with your FBX path
+    loader.load("./media/exploratorium-test.fbx", (object) => {
+      modelRoot = object;
+      setMaterialLook(modelRoot);
+      scene.add(modelRoot);
+
+      const box = new THREE.Box3().setFromObject(modelRoot);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const camDist = maxDim * 1.8;
+
+      controls.target.copy(center);
+      camera.position.set(center.x + camDist, center.y + camDist * 0.6, center.z + camDist);
+      controls.update();
+
+      updateBudget();
+    });
+
+    function onPointerMove(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      if (!modelRoot) return;
+
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(traverseToClickable(modelRoot), true);
+
+      if (!hits.length) {
+        clearHover();
+        return;
+      }
+
+      const mesh = hits[0].object;
+      if (hovered !== mesh) {
+        clearHover();
+        applyHover(mesh);
+      }
+    }
+
+    function onClick() {
+      if (!hovered) return;
+      selected = hovered;
+      updateSelectedPanel(selected.name);
+      document.querySelector('[data-tab="inspect"]').click();
+    }
+
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("click", onClick);
+
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    document.getElementById("ambient").addEventListener("input", (e) => {
+      ambientLight.intensity = Number(e.target.value);
+    });
+
+    document.getElementById("dirLight").addEventListener("input", (e) => {
+      dirLight.intensity = Number(e.target.value);
+    });
+
+    document.getElementById("envIntensity").addEventListener("input", (e) => {
+      const v = Number(e.target.value);
+      if (!modelRoot) return;
+      modelRoot.traverse((obj) => {
+        if (obj.isMesh && obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.envMapIntensity = v);
+          else obj.material.envMapIntensity = v;
+        }
+      });
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = viewer.clientWidth / viewer.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    });
+
+    await loadMetadata();
+  </script>
+</body>
+</html>
