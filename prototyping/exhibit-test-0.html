@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Exhibit 3</title>
+  <title>Exhibit 4</title>
   <style>
     html, body {
       margin: 0;
@@ -15,7 +15,7 @@
     }
 
     body {
-      padding: 50px 100px;
+      padding: 50px 300px;
       box-sizing: border-box;
     }
 
@@ -67,10 +67,11 @@
   </script>
 </head>
 <body>
+  <h1>Star Lifecycle Exhibit Visualization</h1>
   <div id="sceneWrap">
     <div id="popup"></div>
   </div>
-  <div id="info">Short description of the scene goes here.</div>
+  <div id="info">Click on objects in the exhibit visualization to see its description.</div>
 
   <script type="module">
     import * as THREE from "three";
@@ -111,9 +112,17 @@
     let hoveredMesh = null;
 
     const metadata = {
-      "Chair": "A chair you can inspect.",
-      "Table": "A table in the room.",
-      "Lamp": "A lamp with a description."
+      "dais": "Support structure for the exhibit.",
+      "informational-display-1": "Informational display for visitors who are not using the interactive display.",
+      "informational-display-2": "Informational display for visitors who are not using the interactive display.",
+      "interactive-display": "Touchscreen for visitors to interact with the exhibit.",
+      "projector": "Projects the interactive display animation onto the spherical display.",
+      "projector.001": "Projects the interactive display animation onto the spherical display.",
+      "projector.002": "Projects the interactive display animation onto the spherical display.",
+      "standin-human": "2m-tall human figure for scale.",
+      "star-platform": "Support structure for the spherical star display.",
+      "star-screen": "Spherical display for the interactive exhibit.",
+      "surrounding-panels": "Enclosure for the exhibit, and to darken the interior as much as possible."
     };
 
     function showPopup(name) {
@@ -239,7 +248,7 @@
 
     const loader = new FBXLoader();
     loader.load(
-      "./exploratorium-v3.fbx",
+      "./exploratorium-v3a.fbx",
       (object) => {
         collectClickableMeshes(object);
         scene.add(object);

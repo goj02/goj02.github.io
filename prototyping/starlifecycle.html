@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Star Lifecycle Simulator</title>
+  <style>
+    :root{
+      --bg:#050816;
+      --panel:rgba(11,18,36,.72);
+      --panel2:rgba(16,25,50,.86);
+      --text:#ecf3ff;
+      --muted:#a8b3cf;
+      --accent:#7dd3fc;
+      --accent2:#c084fc;
+      --good:#6ee7b7;
+      --warn:#fb7185;
+      --shadow:0 20px 60px rgba(0,0,0,.45);
+      --radius:24px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(96,165,250,.18), transparent 28%),
+        radial-gradient(circle at 80% 10%, rgba(192,132,252,.15), transparent 24%),
+        radial-gradient(circle at 50% 90%, rgba(34,197,94,.09), transparent 30%),
+        linear-gradient(180deg, #02040d 0%, #050816 100%);
+      overflow-x:hidden;
+    }
+    .stars, .stars::before, .stars::after{
+      position:fixed; inset:0;
+      content:"";
+      background-image:
+        radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,.9) 50%, transparent 51%),
+        radial-gradient(1px 1px at 120px 80px, rgba(255,255,255,.7) 50%, transparent 51%),
+        radial-gradient(1px 1px at 200px 150px, rgba(255,255,255,.8) 50%, transparent 51%),
+        radial-gradient(1px 1px at 300px 60px, rgba(255,255,255,.6) 50%, transparent 51%);
+      background-size: 360px 220px;
+      opacity:.35;
+      pointer-events:none;
+      animation: drift 80s linear infinite;
+    }
+    .stars::before{transform:translateY(-30px); opacity:.18; animation-duration:110s}
+    .stars::after{transform:translateY(25px); opacity:.12; animation-duration:140s}
+    @keyframes drift { from{transform:translate3d(0,0,0)} to{transform:translate3d(-120px,80px,0)} }
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:32px 18px 40px;
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(13,20,40,.88), rgba(8,12,24,.78));
+      border:1px solid rgba(148,163,184,.16);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
+      overflow:hidden;
+      backdrop-filter: blur(16px);
+    }
+    header{
+      padding:22px 22px 10px;
+      display:flex;
+      justify-content:space-between;
+      gap:18px;
+      align-items:flex-start;
+      flex-wrap:wrap;
+      border-bottom:1px solid rgba(148,163,184,.12);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+    }
+    h1{
+      margin:0;
+      font-size:clamp(1.4rem, 3vw, 2.2rem);
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin:.45rem 0 0;
+      color:var(--muted);
+      max-width:70ch;
+      line-height:1.5;
+    }
+
+    .controls{
+      padding:18px 22px 8px;
+      display:grid;
+      gap:16px;
+      grid-template-columns:1.5fr auto auto;
+      align-items:end;
+    }
+    .field{
+      background:var(--panel);
+      border:1px solid rgba(148,163,184,.14);
+      border-radius:18px;
+      padding:14px 16px;
+    }
+    .field label{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      font-size:.92rem;
+      color:#dbe7ff;
+      margin-bottom:10px;
+    }
+    .field input[type="range"]{
+      width:100%;
+      accent-color: var(--accent);
+    }
+    .readout{
+      font-variant-numeric: tabular-nums;
+      color:var(--accent);
+      white-space:nowrap;
+    }
+    .btn{
+      border:0;
+      border-radius:16px;
+      padding:14px 18px;
+      font-weight:700;
+      cursor:pointer;
+      color:#06111f;
+      background:linear-gradient(135deg, #7dd3fc, #c084fc);
+      box-shadow:0 10px 24px rgba(125,211,252,.22);
+      transition:transform .18s ease, filter .18s ease, opacity .18s ease;
+      min-width:120px;
+    }
+    .btn:hover{transform:translateY(-1px); filter:saturate(1.1)}
+    .btn:disabled{opacity:.55; cursor:not-allowed; transform:none}
+    .ghost{
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      border:1px solid rgba(148,163,184,.18);
+      box-shadow:none;
+    }
+
+    .stage{
+      margin:10px 22px 0;
+      background:
+        radial-gradient(circle at center, rgba(125,211,252,.08), transparent 35%),
+        radial-gradient(circle at 50% 55%, rgba(255,255,255,.05), transparent 48%),
+        linear-gradient(180deg, rgba(3,7,18,.95), rgba(6,10,22,.98));
+      border:1px solid rgba(148,163,184,.14);
+      border-radius:28px;
+      height:min(56vw, 560px);
+      position:relative;
+      overflow:hidden;
+    }
+    canvas{width:100%; height:100%; display:block;}
+    .overlay{
+      position:absolute;
+      left:18px; right:18px; bottom:16px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:end;
+      pointer-events:none;
+      flex-wrap:wrap;
+    }
+    .status{
+      background:rgba(5,10,22,.55);
+      border:1px solid rgba(148,163,184,.14);
+      color:#e5efff;
+      border-radius:14px;
+      padding:10px 12px;
+      backdrop-filter: blur(10px);
+    }
+    .age{
+      font-size:1.06rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .phase{
+      color:var(--muted);
+      font-size:.92rem;
+      margin-top:4px;
+    }
+    .hint{color:var(--muted); font-size:.88rem; margin-top:6px}
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <div>
+          <h1>Star Lifecycle Simulator</h1>
+          <p class="sub">Set the gas-and-dust mass, then press Play to watch a 30-second cosmic timeline: collapse, ignition, red giant, and either nebula or supernova, before the material returns to the interstellar medium.</p>
+        </div>
+      </header>
+
+      <div class="controls">
+        <div class="field">
+          <label>
+            <span>Interstellar dust and gas mass</span>
+            <span class="readout" id="massReadout">5.0 × 10³⁰ kg</span>
+          </label>
+          <input id="massSlider" type="range" min="1" max="100" value="5" />
+          <div class="hint">Low mass → nebula. High mass → supernova. Threshold: 10<sup>40</sup> kg.</div>
+        </div>
+        <button class="btn" id="playBtn">Play</button>
+        <button class="btn ghost" id="resetBtn">Reset</button>
+      </div>
+
+      <div class="stage">
+        <canvas id="scene"></canvas>
+        <div class="overlay">
+          <div class="status">
+            <div class="age" id="ageText">0.0 billion years elapsed</div>
+            <div class="phase" id="phaseText">Interstellar gas and dust</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('scene');
+    const ctx = canvas.getContext('2d');
+    const slider = document.getElementById('massSlider');
+    const massReadout = document.getElementById('massReadout');
+    const playBtn = document.getElementById('playBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const ageText = document.getElementById('ageText');
+    const phaseText = document.getElementById('phaseText');
+
+    let W, H, dpr;
+    let running = false;
+    let start = 0;
+    let raf = 0;
+    const DURATION = 30000;
+    const BIL_YEARS = 12;
+
+    function resize() {
+      dpr = Math.max(1, window.devicePixelRatio || 1);
+      W = canvas.clientWidth;
+      H = canvas.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function massKg() {
+      return Number(slider.value) * 1e30;
+    }
+    function updateMassLabel() {
+      massReadout.textContent = `${Number(slider.value).toFixed(1)} × 10³⁰ kg`;
+    }
+    updateMassLabel();
+
+    slider.addEventListener('input', updateMassLabel);
+
+    function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+    function easeInOut(t){ return t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2)/2; }
+    function lerp(a,b,t){ return a + (b-a)*t; }
+
+    function drawBackground(t) {
+      const g = ctx.createLinearGradient(0,0,0,H);
+      g.addColorStop(0, '#030712');
+      g.addColorStop(1, '#08101f');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,W,H);
+
+      for (let i = 0; i < 90; i++) {
+        const x = (i * 97 + t * 18) % (W + 80) - 40;
+        const y = (i * 53 + Math.sin(t/800 + i) * 20) % H;
+        const r = (i % 5 === 0 ? 1.8 : .9);
+        ctx.fillStyle = `rgba(255,255,255,${0.12 + (i % 7) * 0.03})`;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    function drawDustCloud(x, y, scale, alpha, hueShift, t) {
+      for (let i = 0; i < 180; i++) {
+        const a = i * 0.35 + t * 0.0015;
+        const r = scale * (0.25 + (i % 9) * 0.06);
+        const px = x + Math.cos(a) * r * (0.9 + (i % 5) * 0.08);
+        const py = y + Math.sin(a * 1.2) * r * 0.65;
+        ctx.fillStyle = `hsla(${200 + hueShift + (i % 35)}, 80%, ${70 - (i % 20)}%, ${alpha * 0.07})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 2.2 + (i % 4) * .8, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    function drawStar(coreX, coreY, size, phase, t, color) {
+      const pulse = 1 + Math.sin(t*0.006) * 0.04;
+      const r = size * pulse;
+
+      const grad = ctx.createRadialGradient(coreX, coreY, r*0.08, coreX, coreY, r*2.4);
+      grad.addColorStop(0, color.inner);
+      grad.addColorStop(.35, color.mid);
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(coreX, coreY, r*2.4, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.fillStyle = color.core;
+      ctx.beginPath();
+      ctx.arc(coreX, coreY, r, 0, Math.PI*2);
+      ctx.fill();
+
+      if (phase > .82) {
+        ctx.strokeStyle = `rgba(255,${180 + Math.random()*40},120,.45)`;
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 8; i++) {
+          const ang = (Math.PI*2/8)*i + t*0.001;
+          ctx.beginPath();
+          ctx.moveTo(coreX + Math.cos(ang)*r*0.8, coreY + Math.sin(ang)*r*0.8);
+          ctx.lineTo(coreX + Math.cos(ang)*r*1.9, coreY + Math.sin(ang)*r*1.9);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawNebula(cx, cy, radius, t) {
+      for (let i = 0; i < 120; i++) {
+        const a = i * 0.52 + t*0.0009;
+        const rr = radius * (0.2 + (i % 13) * 0.06);
+        const x = cx + Math.cos(a) * rr + Math.sin(t*0.001 + i) * 10;
+        const y = cy + Math.sin(a*1.1) * rr * 0.8;
+        ctx.fillStyle = `hsla(${220 + (i % 40)}, 72%, ${58 + (i % 16)}%, 0.09)`;
+        ctx.beginPath();
+        ctx.arc(x, y, 10 + (i % 6) * 2, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    function frame(now) {
+      if (!running) return;
+      const elapsed = now - start;
+      const p = clamp01(elapsed / DURATION);
+      const mass = massKg();
+      const supernova = mass >= 1e40;
+
+      drawBackground(now);
+
+      const cx = W * 0.5;
+      const cy = H * 0.5;
+      const collapse = easeInOut(clamp01(p / 0.28));
+      const ignition = clamp01((p - 0.18) / 0.18);
+      const redGiant = clamp01((p - 0.35) / 0.22);
+      const finale = clamp01((p - 0.62) / 0.18);
+      const returnHome = clamp01((p - 0.80) / 0.20);
+
+      if (p < 0.22) {
+        drawDustCloud(cx, cy, lerp(180, 55, collapse), 1, 0, now);
+      } else if (p < 0.35) {
+        drawDustCloud(cx, cy, lerp(55, 25, ignition), 0.45, 20, now);
+        drawStar(cx, cy, lerp(10, 28, ignition), ignition, now, {
+          core: 'rgba(255,245,210,.95)',
+          mid: 'rgba(255,190,90,.35)',
+          inner: 'rgba(255,255,255,.9)'
+        });
+      } else if (p < 0.62) {
+        drawStar(cx, cy, lerp(28, 62, redGiant), redGiant, now, {
+          core: 'rgba(255,170,110,.95)',
+          mid: 'rgba(255,120,70,.28)',
+          inner: 'rgba(255,220,180,.85)'
+        });
+        drawDustCloud(cx, cy, 90, 0.14, 35, now);
+      } else if (p < 0.80) {
+        if (supernova) {
+          const shock = 90 + finale * 180;
+          ctx.strokeStyle = `rgba(255,220,180,${0.65 - finale*0.45})`;
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.arc(cx, cy, shock, 0, Math.PI*2);
+          ctx.stroke();
+          drawStar(cx, cy, 18, 1, now, {
+            core: 'rgba(255,255,255,1)',
+            mid: 'rgba(255,180,90,.4)',
+            inner: 'rgba(255,255,255,.95)'
+          });
+          for (let i = 0; i < 140; i++) {
+            const a = i * 0.45;
+            const r = shock * (0.5 + (i % 9) * 0.08);
+            const x = cx + Math.cos(a + now*0.001) * r;
+            const y = cy + Math.sin(a*1.05 + now*0.001) * r * 0.75;
+            ctx.fillStyle = `hsla(${30 + (i % 40)}, 100%, 72%, ${0.18 - finale*0.08})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 2 + (i % 4), 0, Math.PI*2);
+            ctx.fill();
+          }
+        } else {
+          drawNebula(cx, cy, 160, now);
+          drawStar(cx, cy, 14, 0.4, now, {
+            core: 'rgba(220,240,255,.95)',
+            mid: 'rgba(120,170,255,.18)',
+            inner: 'rgba(255,255,255,.9)'
+          });
+        }
+      } else {
+        const back = easeInOut(returnHome);
+        drawDustCloud(cx, cy, lerp(120, 180, back), 0.95, 0, now);
+      }
+
+      if (p >= 0.80) {
+        const back = easeInOut(returnHome);
+        drawDustCloud(cx, cy, lerp(120, 180, back), 0.95, 0, now);
+      }
+
+      const years = p * BIL_YEARS;
+      ageText.textContent = `${years.toFixed(1)} billion years elapsed`;
+      phaseText.textContent =
+        p < 0.22 ? 'Interstellar gas and dust condensing under gravity' :
+        p < 0.35 ? 'Protostar igniting' :
+        p < 0.62 ? 'Red giant phase' :
+        p < 0.80 ? (supernova ? 'Supernova explosion' : 'Nebula remnant') :
+        'Material returning to the interstellar medium';
+
+      if (elapsed < DURATION) {
+        raf = requestAnimationFrame(frame);
+      } else {
+        running = false;
+        playBtn.textContent = 'Play';
+        playBtn.disabled = false;
+        resetBtn.disabled = false;
+      }
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (running) return;
+      running = true;
+      playBtn.textContent = 'Playing...';
+      playBtn.disabled = true;
+      resetBtn.disabled = true;
+      start = performance.now();
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(frame);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      running = false;
+      cancelAnimationFrame(raf);
+      drawBackground(0);
+      ageText.textContent = '0.0 billion years elapsed';
+      phaseText.textContent = 'Interstellar gas and dust';
+      playBtn.textContent = 'Play';
+      playBtn.disabled = false;
+      resetBtn.disabled = false;
+    });
+
+    drawBackground(0);
+  </script>
+</body>
+</html>
